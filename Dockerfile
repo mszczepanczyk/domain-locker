@@ -1,5 +1,5 @@
 # Stage 1 - build: Compiles the frontend and API code
-FROM node:20.12.0-alpine AS builder
+FROM node:20.12.0-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -24,14 +24,14 @@ ENV NODE_OPTIONS="--max-old-space-size=8192"
 ENV DL_ENV_TYPE="selfHosted"
 RUN npm run build
 
-# Stage 2 - run: Alpine-based runtime to serve the app
-FROM node:20.12.0-alpine AS runner
+# Stage 2 - run: slim-based runtime to serve the app
+FROM node:20.12.0-slim AS runner
 
 # Install PostgreSQL client to run pg_isready and psql
-RUN apk add --no-cache postgresql-client
+RUN apt-get update && apt-get install -y postgresql-client
 
 # Create non-root app user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 # Set working directory
 WORKDIR /app
@@ -43,11 +43,12 @@ COPY --chown=appuser:appgroup --from=builder /app/db/schema.sql ./schema.sql
 COPY --chown=appuser:appgroup --from=builder /app/start.sh ./start.sh
 
 # Install only production dependencies
-RUN npm config set registry https://registry.npmmirror.com && \
-    npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 2000 && \
-    npm config set fetch-retry-maxtimeout 60000 && \
-    for i in 1 2 3; do npm install --omit=dev --legacy-peer-deps && break || sleep 20; done
+# RUN npm config set registry https://registry.npmmirror.com && \
+#     npm config set fetch-retries 5 && \
+#     npm config set fetch-retry-mintimeout 2000 && \
+#     npm config set fetch-retry-maxtimeout 60000 && \
+#     for i in 1 2 3; do npm install --omit=dev --legacy-peer-deps && break || sleep 20; done
+RUN npm install --omit=dev --legacy-peer-deps
 
 
 # Switch to the app user
