@@ -50,6 +50,8 @@ COPY --chown=appuser:appgroup --from=builder /app/start.sh ./start.sh
 #     for i in 1 2 3; do npm install --omit=dev --legacy-peer-deps && break || sleep 20; done
 RUN npm install --omit=dev --legacy-peer-deps
 
+# XXX: fix no such file or directory for translation files
+COPY --chown=appuser:appgroup --from=builder /app/src ./src
 
 # Switch to the app user
 USER appuser
